@@ -34,6 +34,8 @@ public:
 		FString FileName;
 
 private:
+	FVector TransformLocationFromBlockLocation(int sx, int sy, int x, int y, float fz);
+private:
 	typename MazeMap m_MazeMap;
 	Stack<std::pair<int, int>> m_PositionStack;
 	std::vector<std::vector<AFloor*> > m_Floors;
