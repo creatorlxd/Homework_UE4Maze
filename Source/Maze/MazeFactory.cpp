@@ -118,6 +118,9 @@ void AMazeFactory::Tick(float DeltaTime)
 		else
 		{
 			//todo: fail
+			auto hud = CreateWidget<UUserWidget>(m_pController, LoseHUDAsset);
+			hud->AddToViewport();
+			m_pController->bShowMouseCursor = true;
 		}
 	}
 }
