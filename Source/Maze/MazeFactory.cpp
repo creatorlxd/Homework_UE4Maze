@@ -7,6 +7,7 @@
 #include "UObject/NameTypes.h"
 #include "UObject/UObjectBase.h"
 #include "Wall.h"
+#include "Blueprint\UserWidget.h"
 
 // Sets default values
 AMazeFactory::AMazeFactory()
@@ -22,73 +23,6 @@ void AMazeFactory::BeginPlay()
 	Super::BeginPlay();
 
 	m_pController = Cast<AMazePlayerController>(UGameplayStatics::GetPlayerController(GetWorld(), 0));
-
-	auto filename = FPaths::ProjectContentDir() / FString("MazeMap") / FileName;
-	/*TArray<AActor*> Actors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APlayerStart::StaticClass(), Actors);
-
-	for (AActor* Actor : Actors)
-	{
-		UE_LOG(LogMaze, Log, TEXT("get"));
-		(Cast<APlayerStart>(Actor))->SetActorLocation(FVector(0, 0, 0));
-	}*/
-	//TODO: dynamic spwan playerstart
-	std::ifstream ifile(filename.GetCharArray().GetData());
-	ifile >> m_MazeMap;
-	UE_LOG(LogMaze, Log, TEXT("%d %d"), m_MazeMap.x, m_MazeMap.y);
-
-	m_Floors.resize(m_MazeMap.x, std::vector<AFloor*>(m_MazeMap.y, nullptr));
-	m_Flag.resize(m_MazeMap.x, std::vector<bool>(m_MazeMap.y, false));
-
-	int sx, sy;
-	for (int i = 0; i < m_MazeMap.x; i++)
-	{
-		for (int j = 0; j < m_MazeMap.y; j++)
-		{
-			if (m_MazeMap.m_Content[i][j] == MazeType::Src)
-			{
-				sx = i;
-				sy = j;
-			}
-			else if (m_MazeMap.m_Content[i][j] == MazeType::Dst)
-			{
-				m_DstX = i;
-				m_DstY = j;
-			}
-		}
-	}
-	UE_LOG(LogMaze, Log, TEXT("start %d %d"), sx, sy);
-	for (int i = 0; i < m_MazeMap.x; i++)
-	{
-		for (int j = 0; j < m_MazeMap.y; j++)
-		{
-			if (m_MazeMap.m_Content[i][j] == MazeType::Wall)
-			{
-				GetWorld()->SpawnActor<AWall>(AWall::StaticClass(), TransformLocationFromBlockLocation(sx, sy, i, j, 0), FRotator(0));
-				m_Flag[i][j] = true;
-			}
-		}
-	}
-
-
-
-	for (int i = 0; i < m_MazeMap.x; i++)
-	{
-		for (int j = 0; j < m_MazeMap.y; j++)
-		{
-			auto pfloor = GetWorld()->SpawnActor<AFloor>(AFloor::StaticClass(), TransformLocationFromBlockLocation(sx, sy, i, j, -100), FRotator(0));
-			if (m_MazeMap.m_Content[i][j] == MazeType::Dst)
-				pfloor->SetColorBlue();
-			m_Floors[i][j] = pfloor;
-		}
-	}
-
-	m_PositionStack.Push(std::make_pair(sx, sy));
-	m_Flag[sx][sy] = true;
-	m_Floors[sx][sy]->SetColorGreen();
-
-	m_StartX = sx;
-	m_StartY = sy;
 }
 
 // Called every frame
@@ -107,6 +41,9 @@ void AMazeFactory::Tick(float DeltaTime)
 			{
 				m_Floors[m_PositionStack.Top().first][m_PositionStack.Top().second]->SetColorBlue();
 				//todo : win
+				auto hud = CreateWidget<UUserWidget>(m_pController, WinHUDAsset);
+				hud->AddToViewport();
+				m_pController->bShowMouseCursor = true;
 			}
 			else
 			{
@@ -183,6 +120,67 @@ void AMazeFactory::Tick(float DeltaTime)
 			//todo: fail
 		}
 	}
+}
+
+void AMazeFactory::LoadMazeFile(const FString& FileName)
+{
+	auto filename = FPaths::ProjectContentDir() / FString("MazeMap") / FileName;
+	std::ifstream ifile(filename.GetCharArray().GetData());
+	ifile >> m_MazeMap;
+	UE_LOG(LogMaze, Log, TEXT("%d %d"), m_MazeMap.x, m_MazeMap.y);
+
+	m_Floors.resize(m_MazeMap.x, std::vector<AFloor*>(m_MazeMap.y, nullptr));
+	m_Flag.resize(m_MazeMap.x, std::vector<bool>(m_MazeMap.y, false));
+
+	int sx, sy;
+	for (int i = 0; i < m_MazeMap.x; i++)
+	{
+		for (int j = 0; j < m_MazeMap.y; j++)
+		{
+			if (m_MazeMap.m_Content[i][j] == MazeType::Src)
+			{
+				sx = i;
+				sy = j;
+			}
+			else if (m_MazeMap.m_Content[i][j] == MazeType::Dst)
+			{
+				m_DstX = i;
+				m_DstY = j;
+			}
+		}
+	}
+	UE_LOG(LogMaze, Log, TEXT("start %d %d"), sx, sy);
+	for (int i = 0; i < m_MazeMap.x; i++)
+	{
+		for (int j = 0; j < m_MazeMap.y; j++)
+		{
+			if (m_MazeMap.m_Content[i][j] == MazeType::Wall)
+			{
+				GetWorld()->SpawnActor<AWall>(AWall::StaticClass(), TransformLocationFromBlockLocation(sx, sy, i, j, 0), FRotator(0));
+				m_Flag[i][j] = true;
+			}
+		}
+	}
+
+
+
+	for (int i = 0; i < m_MazeMap.x; i++)
+	{
+		for (int j = 0; j < m_MazeMap.y; j++)
+		{
+			auto pfloor = GetWorld()->SpawnActor<AFloor>(AFloor::StaticClass(), TransformLocationFromBlockLocation(sx, sy, i, j, -100), FRotator(0));
+			if (m_MazeMap.m_Content[i][j] == MazeType::Dst)
+				pfloor->SetColorBlue();
+			m_Floors[i][j] = pfloor;
+		}
+	}
+
+	m_PositionStack.Push(std::make_pair(sx, sy));
+	m_Flag[sx][sy] = true;
+	m_Floors[sx][sy]->SetColorGreen();
+
+	m_StartX = sx;
+	m_StartY = sy;
 }
 
 FVector AMazeFactory::TransformLocationFromBlockLocation(int sx, int sy, int x, int y, float fz)

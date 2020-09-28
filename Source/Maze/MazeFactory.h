@@ -30,8 +30,15 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 public:
-	UPROPERTY(EditAnywhere, Category = "Maze")
-		FString FileName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSubclassOf<UUserWidget> WinHUDAsset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		TSubclassOf<UUserWidget> LoseHUDAsset;
+
+	UFUNCTION(BlueprintCallable)
+		void LoadMazeFile(const FString& FileName);
 
 private:
 	FVector TransformLocationFromBlockLocation(int sx, int sy, int x, int y, float fz);
