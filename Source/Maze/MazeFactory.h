@@ -5,6 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MyMaze.h"
+#include "Stack.h"
+#include <utility>
+#include <vector>
+#include "Floor.h"
+#include "MazePlayerController.h"
 #include "MazeFactory.generated.h"
 
 UCLASS()
@@ -30,4 +35,10 @@ public:
 
 private:
 	typename MazeMap m_MazeMap;
+	Stack<std::pair<int, int>> m_PositionStack;
+	std::vector<std::vector<AFloor*> > m_Floors;
+	std::vector<std::vector<bool> > m_Flag;
+	AMazePlayerController* m_pController;
+	int m_StartX, m_StartY;
+	int m_DstX, m_DstY;
 };
